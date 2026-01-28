@@ -1,0 +1,28 @@
+.drag-handle {
+  position: absolute;
+  left: -24px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  color: #6b7280;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.drag-handle:hover {
+  color: #3b82f6;
+}
+
+[data-selected="true"] .drag-handle,
+.ui-button-wrapper:hover .drag-handle {
+  opacity: 1;
+}
