@@ -290,11 +290,7 @@ const UIBuilderEditor = () => {
       if (!file) return
 
       const success = await importFile(editor, file)
-      if (success) {
-        // Optional: Show success message
-        console.log('File imported successfully')
-      } else {
-        // Optional: Show error message
+      if (!success) {
         alert('Failed to import file. Please ensure it is a valid JSON file exported from this UI builder.')
       }
     }
