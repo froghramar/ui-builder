@@ -1,74 +1,58 @@
 import { Editor } from '@tiptap/core'
 import { componentRegistry } from '../components/registry/ComponentRegistry'
 
+const WP_NAMESPACE = 'ui-builder'
+
 export const exportToJSON = (editor: Editor): string => {
   return JSON.stringify(editor.getJSON(), null, 2)
 }
 
-export const exportToHTML = (editor: Editor): string => {
-  return editor.getHTML()
-}
-
-export const exportToReact = (editor: Editor): string => {
+/**
+ * Export editor content as WordPress block markup (Gutenberg format).
+ * Custom components use namespace "ui-builder" (e.g. wp:ui-builder/button).
+ * Paragraphs use core block wp:paragraph.
+ */
+export const exportToWordPressBlocks = (editor: Editor): string => {
   const json = editor.getJSON()
-  
-  const processNode = (node: any, indent = 0): string => {
-    const spaces = '  '.repeat(indent)
-    
+
+  const processNode = (node: any): string => {
     if (node.type === 'doc') {
-      const children = node.content?.map((child: any) => processNode(child, indent + 1)).join('\n') || ''
+      const children = node.content?.map((child: any) => processNode(child)).join('\n') || ''
       return children
     }
-    
+
     if (node.type === 'paragraph') {
       const text = node.content?.map((child: any) => {
-        if (child.type === 'text') {
-          return child.text
-        }
+        if (child.type === 'text') return child.text ?? ''
         return ''
       }).join('') || ''
-      return `${spaces}<p>${text}</p>`
+      const escaped = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+      return `<!-- wp:paragraph -->\n<p>${escaped}</p>\n<!-- /wp:paragraph -->`
     }
-    
-    // Handle UI components
+
     const componentDef = componentRegistry.get(node.type)
     if (componentDef) {
-      const props = Object.entries(node.attrs || {})
-        .filter(([key]) => key !== 'id')
-        .map(([key, value]) => {
-          if (typeof value === 'string') {
-            return `${key}="${value}"`
-          } else if (typeof value === 'boolean') {
-            return value ? key : `${key}={false}`
-          } else {
-            return `${key}={${JSON.stringify(value)}}`
-          }
-        })
-        .join(' ')
-      
-      const componentName = componentDef.metadata.name
-        .split(' ')
-        .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join('')
-      
-      return `${spaces}<${componentName} ${props} />`
+      const attrs = { ...(node.attrs || {}) }
+      delete attrs.id
+      const attrsJson = Object.keys(attrs).length ? ' ' + JSON.stringify(attrs) : ''
+      const blockName = `${WP_NAMESPACE}/${node.type}`
+
+      const hasContent = node.content && node.content.length > 0
+      if (hasContent) {
+        const inner = node.content.map((child: any) => processNode(child)).join('\n')
+        return `<!-- wp:${blockName}${attrsJson} -->\n${inner}\n<!-- /wp:${blockName} -->`
+      }
+      return `<!-- wp:${blockName}${attrsJson} /-->`
     }
-    
+
     return ''
   }
-  
-  const reactCode = processNode(json)
-  
-  return `import React from 'react'
 
-export default function GeneratedComponent() {
-  return (
-    <>
-${reactCode.split('\n').map(line => '      ' + line).join('\n')}
-    </>
-  )
-}
-`
+  return processNode(json).trim()
 }
 
 export const downloadFile = (content: string, filename: string, mimeType: string) => {

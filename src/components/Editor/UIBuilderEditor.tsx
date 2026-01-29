@@ -14,7 +14,7 @@ import PropertyPanel from '../property-panel/PropertyPanel'
 import { componentRegistry } from '../registry/ComponentRegistry'
 import { ComponentDefinition } from '../../types/component'
 import { useEffect, useCallback } from 'react'
-import { exportToJSON, exportToHTML, exportToReact, downloadFile } from '../../utils/export'
+import { exportToJSON, exportToWordPressBlocks, downloadFile } from '../../utils/export'
 import { importFile } from '../../utils/import'
 import './UIBuilderEditor.css'
 
@@ -345,23 +345,13 @@ const UIBuilderEditor = () => {
             </button>
             <button
               onClick={() => {
-                const html = exportToHTML(editor)
-                downloadFile(html, 'ui-builder.html', 'text/html')
+                const blocks = exportToWordPressBlocks(editor)
+                downloadFile(blocks, 'ui-builder-blocks.html', 'text/html')
               }}
               className="toolbar-button"
-              title="Export as HTML"
+              title="Export as WordPress blocks"
             >
-              Export HTML
-            </button>
-            <button
-              onClick={() => {
-                const react = exportToReact(editor)
-                downloadFile(react, 'GeneratedComponent.tsx', 'text/typescript')
-              }}
-              className="toolbar-button"
-              title="Export as React"
-            >
-              Export React
+              Export WordPress blocks
             </button>
           </div>
         </div>
